@@ -12,11 +12,13 @@ from homeassistant.const import CONF_URL, CONF_PASSWORD, CONF_USERNAME
 _LOGGER = logging.getLogger(__name__)
 
 CONF_RSSI = 'rssi'
+CONF_MACS = 'macs'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Optional(CONF_URL, default='http://192.168.1.1/'): cv.string,
-    vol.Optional(CONF_USERNAME, default='admin'): cv.string,
-    vol.Optional(CONF_PASSWORD, default='admin'): cv.string,
+    vol.Required(CONF_MACS): {cv.string: cv.string},
+    vol.Required(CONF_URL): cv.string,
+    vol.Required(CONF_USERNAME): cv.string,
+    vol.Required(CONF_PASSWORD): cv.string,
     vol.Optional(CONF_RSSI): vol.All(vol.Coerce(int), vol.Range(min=-200, max=0)),
 })
 
@@ -37,6 +39,7 @@ class PadavanDeviceScanner(DeviceScanner):
         self.url = config[CONF_URL]
         self.username = config[CONF_USERNAME]
         self.password = config[CONF_PASSWORD]
+        self.macs     = config.get(CONF_MACS)
         self.rssi_min = config.get(CONF_RSSI)
         self.scan_interval = config[CONF_SCAN_INTERVAL]
         self.last_results = []
@@ -118,10 +121,14 @@ class PadavanDeviceScanner(DeviceScanner):
             if m:
                 values = line.split()
                 rssi = int(values[8])
+                mac_val  = values[0]
                 debug.append({'mac': values[0], 'rssi': rssi, 'psm': values[9], 'time': values[10],
                               'bw': values[2], 'mcs': values[3], })
                 if self.rssi_min and rssi < self.rssi_min:
                     continue
+                for (dev_id, mac) in self.macs.items():
+                    if mac != mac_val:
+                        continue
                 self.last_results.append(m.group(1))
 
         _LOGGER.debug('results %s', str(debug))
