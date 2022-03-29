@@ -126,10 +126,8 @@ class PadavanDeviceScanner(DeviceScanner):
                               'bw': values[2], 'mcs': values[3], })
                 if self.rssi_min and rssi < self.rssi_min:
                     continue
-                for (dev_id, mac) in self.macs.items():
-                    if mac != mac_val:
-                        continue
-                self.last_results.append(m.group(1))
+                if mac_val in self.macs.values():
+                    self.last_results.append(m.group(1))
 
         _LOGGER.debug('results %s', str(debug))
 
